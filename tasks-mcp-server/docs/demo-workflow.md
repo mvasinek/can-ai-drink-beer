@@ -43,7 +43,30 @@ Cursor will launch the MCP server automatically when configured. For manual test
 python -m tasks_mcp_server.mcp_server
 ```
 
-Keep the web app running in the other terminal so both share the same database.
+Keep the web app running in the other terminal. The MCP server calls the REST API at `http://127.0.0.1:8000` and does not access the database directly.
+
+## How data flows during the demo
+
+```text
+Task created in web UI
+        │
+        ▼
+REST API writes to SQLite
+        │
+        ▼
+Cursor agent calls MCP tool
+        │
+        ▼
+MCP server calls REST API
+        │
+        ▼
+REST API updates SQLite
+        │
+        ▼
+Browser refresh shows completed task
+```
+
+The task is created through the web interface. The Cursor agent retrieves the task through MCP. The MCP server calls the REST API. The REST API updates SQLite. The browser immediately displays the updated task state after refresh.
 
 ### 6. Configure Cursor MCP connection
 
@@ -107,4 +130,4 @@ You can also show the REST API docs at:
 http://127.0.0.1:8000/docs
 ```
 
-This helps explain that the frontend and MCP server both build on the same API and service layer.
+This helps explain that the frontend and MCP server both use the same REST API. The API is the single source of truth for all task data.

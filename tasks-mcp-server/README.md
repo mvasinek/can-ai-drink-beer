@@ -2,14 +2,14 @@
 
 A localhost demo app for managing tasks through a web UI, REST API, and MCP tools. Built for a YouTube series on Spec-Driven Development, Semantic Versioning, Cursor Agents, and Model Context Protocol (MCP).
 
-**Current version:** 0.5.0
+**Current version:** 0.5.1
 
 ## What this project demonstrates
 
 - **Spec-driven development** — each version is defined before implementation
 - **Semantic versioning** — incremental releases from storage to API to frontend to MCP
 - **Human + agent workflow** — create tasks in the browser, let Cursor complete them via MCP
-- **Shared architecture** — one service layer and one SQLite database for humans and agents
+- **Single source of truth** — the REST API is the only task data path for frontend and MCP
 
 Tasks can be fetched by Cursor through MCP while humans manage the same task list in the browser.
 
@@ -46,9 +46,16 @@ Tasks can be fetched by Cursor through MCP while humans manage the same task lis
            |
            v
 +----------------------+
-| Service Layer        |
+| REST API             |
++----------+-----------+
+           |
+           v
++----------------------+
+| SQLite Database      |
 +----------------------+
 ```
+
+The MCP server is a lightweight adapter. It does not access SQLite directly.
 
 More detail: [docs/architecture.md](docs/architecture.md)
 
@@ -69,13 +76,16 @@ python -m venv .venv
 pip install -e .
 ```
 
-Optional: set a fixed database path:
+Optional environment variables:
 
 ```bash
 set TASKS_MCP_DATABASE_URL=sqlite:///./tasks.db
+set TASKS_MCP_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 ## Running the web app
+
+**Terminal 1** — start the REST API and web UI:
 
 ```bash
 uvicorn tasks_mcp_server.app:app --reload
@@ -95,11 +105,13 @@ http://127.0.0.1:8000/docs
 
 ## Running the MCP server
 
-In a **second terminal** (keep the web app running):
+**Terminal 2** — start the MCP adapter (keep Terminal 1 running):
 
 ```bash
 python -m tasks_mcp_server.mcp_server
 ```
+
+The MCP server communicates with the application through the REST API. This guarantees that all task operations are immediately visible in the web UI.
 
 Cursor normally launches this process automatically when MCP is configured.
 
@@ -163,7 +175,7 @@ python scripts/load_sample_tasks.py
 
 Common issues and fixes: [docs/troubleshooting.md](docs/troubleshooting.md)
 
-Topics include port conflicts, MCP startup, Cursor not seeing tools, and database path mismatches.
+Topics include port conflicts, REST API unavailable, MCP startup, and Cursor not seeing tools.
 
 ## Running tests
 
@@ -192,12 +204,12 @@ ruff check .
 
 ## MCP tools
 
-| Tool | Description |
-|------|-------------|
-| `get_next_task` | Return the oldest open task |
-| `mark_task_done` | Mark a task as done |
-| `get_task` | Return full task details |
-| `list_open_tasks` | List all open tasks |
+| Tool | REST endpoint used |
+|------|-------------------|
+| `get_next_task` | `GET /api/tasks/next/open` |
+| `get_task` | `GET /api/tasks/{id}` |
+| `list_open_tasks` | `GET /api/tasks?status=open` |
+| `mark_task_done` | `POST /api/tasks/{id}/done` |
 
 Resource: `tasks://open` — JSON list of open tasks
 
@@ -211,10 +223,11 @@ Prompt: `implement_next_task` — built-in agent guidance
 | 0.2.0 | REST API |
 | 0.3.0 | Web frontend |
 | 0.4.0 | MCP integration |
-| **0.5.0** | Demo and documentation release |
+| 0.5.0 | Demo and documentation release |
+| **0.5.1** | MCP routed through REST API |
 | Later | Authentication, deployment |
 
-Release notes: [docs/release-notes-v0.5.0.md](docs/release-notes-v0.5.0.md)
+Release notes: [docs/release-notes-v0.5.1.md](docs/release-notes-v0.5.1.md)
 
 See `specifications/` for version specs.
 

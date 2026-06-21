@@ -1,0 +1,3 @@
+Hello from the Tasks MCP Server!
+
+This file was created after an agent retrieved an open task and completed the requested work.

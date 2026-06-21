@@ -27,14 +27,15 @@ Then open `http://127.0.0.1:8001`.
 
 **Symptoms:** Cursor reports the MCP server failed to start, or `python -m tasks_mcp_server.mcp_server` exits immediately.
 
-**Likely cause:** Wrong working directory, missing virtual environment, or package not installed.
+**Likely cause:** Wrong working directory, missing virtual environment, package not installed, or the REST API is not running.
 
 **Suggested fix:**
 
-1. `cd` into the `tasks-mcp-server` directory.
-2. Activate the virtual environment.
-3. Run `pip install -e .`
-4. Use the full path to the venv Python in Cursor config on Windows.
+1. Start the web app first: `uvicorn tasks_mcp_server.app:app --reload`
+2. `cd` into the `tasks-mcp-server` directory.
+3. Activate the virtual environment.
+4. Run `pip install -e .`
+5. Use the full path to the venv Python in Cursor config on Windows.
 
 ---
 
@@ -42,14 +43,15 @@ Then open `http://127.0.0.1:8001`.
 
 **Symptoms:** The agent does not call `get_next_task`, `mark_task_done`, or other tools.
 
-**Likely cause:** MCP server not configured, wrong `cwd`, or Cursor needs a restart after config changes.
+**Likely cause:** Web app not running, MCP server cannot reach the REST API, MCP server not configured, wrong `cwd`, or Cursor needs a restart after config changes.
 
 **Suggested fix:**
 
-1. Verify [`docs/cursor/mcp-config.json`](cursor/mcp-config.json) matches your setup.
-2. Set `cwd` to the absolute path of `tasks-mcp-server`.
-3. Restart Cursor or reload MCP servers.
-4. Confirm the server name appears in Cursor MCP settings.
+1. Start the web app: `uvicorn tasks_mcp_server.app:app --reload`
+2. Verify [`docs/cursor/mcp-config.json`](cursor/mcp-config.json) matches your setup.
+3. Set `cwd` to the absolute path of `tasks-mcp-server`.
+4. Restart Cursor or reload MCP servers.
+5. Confirm the server name appears in Cursor MCP settings.
 
 ---
 
@@ -76,13 +78,14 @@ On Linux/macOS, use `export` instead of `set`.
 
 **Symptoms:** Cursor marks a task done, but the browser still shows **Open**.
 
-**Likely cause:** Web app and MCP server are using different database files or directories.
+**Likely cause:** MCP server could not reach the REST API, or the web app and MCP server were using different API/database paths.
 
 **Suggested fix:**
 
-1. Ensure both processes run from the same `tasks-mcp-server` directory.
-2. Use the same `TASKS_MCP_DATABASE_URL` for both if you override it.
-3. Click **Refresh** in the web UI.
+1. Ensure the web app is running on `http://127.0.0.1:8000`.
+2. Start MCP only after the REST API is available.
+3. Use the same `TASKS_MCP_API_BASE_URL` if you override the default.
+4. Click **Refresh** in the web UI.
 
 ---
 

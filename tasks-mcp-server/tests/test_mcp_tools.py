@@ -1,94 +1,93 @@
+from unittest.mock import MagicMock
+
 import pytest
 
-from tasks_mcp_server.database import create_db_and_tables, get_session, reset_engine
+from tasks_mcp_server.mcp_api_client import TasksApiClient
 from tasks_mcp_server.mcp_tools import (
     get_next_task,
     get_task,
     list_open_tasks,
     mark_task_done,
 )
-from tasks_mcp_server.models import TaskStatus
-from tasks_mcp_server.schemas import TaskCreate, TaskUpdate
-from tasks_mcp_server.services import TaskService
 
-IN_MEMORY_DATABASE_URL = "sqlite:///:memory:"
-
-
-@pytest.fixture(autouse=True)
-def _reset_engine():
-    reset_engine()
-    yield
-    reset_engine()
+SAMPLE_TASK = {
+    "id": 1,
+    "title": "First",
+    "description": "Oldest",
+    "status": "open",
+    "created_at": "2026-01-01T12:00:00+00:00",
+    "updated_at": "2026-01-01T12:00:00+00:00",
+    "completed_at": None,
+}
 
 
 @pytest.fixture
-def service() -> TaskService:
-    create_db_and_tables(database_url=IN_MEMORY_DATABASE_URL)
-    with get_session(database_url=IN_MEMORY_DATABASE_URL) as session:
-        yield TaskService(session)
+def client() -> MagicMock:
+    return MagicMock(spec=TasksApiClient)
 
 
-def test_get_next_task_returns_oldest_open(service: TaskService) -> None:
-    oldest = service.create_task(TaskCreate(title="First", description="Oldest"))
-    service.create_task(TaskCreate(title="Second", description="Later"))
+def test_get_next_task_returns_concise_task(client: MagicMock) -> None:
+    client.get_next_open_task.return_value = SAMPLE_TASK
 
-    result = get_next_task(service)
+    result = get_next_task(client)
 
-    assert result["id"] == oldest.id
-    assert result["title"] == "First"
-    assert result["status"] == "open"
+    assert result == {
+        "id": 1,
+        "title": "First",
+        "description": "Oldest",
+        "status": "open",
+    }
 
 
-def test_get_next_task_returns_message_when_none(service: TaskService) -> None:
-    result = get_next_task(service)
+def test_get_next_task_returns_message_when_none(client: MagicMock) -> None:
+    client.get_next_open_task.return_value = {"message": "No open task found"}
+
+    result = get_next_task(client)
+
     assert result == {"message": "No open task found"}
 
 
-def test_mark_task_done_success(service: TaskService) -> None:
-    created = service.create_task(TaskCreate(title="Finish me"))
+def test_mark_task_done_success(client: MagicMock) -> None:
+    client.mark_task_done.return_value = {**SAMPLE_TASK, "status": "done"}
 
-    result = mark_task_done(service, created.id)
+    result = mark_task_done(client, 1)
 
-    assert result == {"success": True, "task_id": created.id, "status": "done"}
+    assert result == {"success": True, "task_id": 1, "status": "done"}
 
 
-def test_mark_task_done_not_found(service: TaskService) -> None:
-    result = mark_task_done(service, 999)
+def test_mark_task_done_not_found(client: MagicMock) -> None:
+    client.mark_task_done.return_value = {
+        "success": False,
+        "message": "Task not found",
+    }
+
+    result = mark_task_done(client, 999)
+
     assert result == {"success": False, "message": "Task not found"}
 
 
-def test_get_task_returns_full_task(service: TaskService) -> None:
-    created = service.create_task(
-        TaskCreate(title="Lookup", description="Full details"),
-    )
+def test_get_task_returns_full_task(client: MagicMock) -> None:
+    client.get_task.return_value = SAMPLE_TASK
 
-    result = get_task(service, created.id)
+    result = get_task(client, 1)
 
-    assert result["id"] == created.id
-    assert result["title"] == "Lookup"
-    assert result["description"] == "Full details"
-    assert result["status"] == "open"
+    assert result["id"] == 1
+    assert result["title"] == "First"
     assert "created_at" in result
-    assert "updated_at" in result
 
 
-def test_get_task_not_found(service: TaskService) -> None:
-    result = get_task(service, 999)
+def test_get_task_not_found(client: MagicMock) -> None:
+    client.get_task.return_value = {"message": "Task not found"}
+
+    result = get_task(client, 999)
+
     assert result == {"message": "Task not found"}
 
 
-def test_list_open_tasks(service: TaskService) -> None:
-    open_task = service.create_task(TaskCreate(title="Open task"))
-    done_task = service.create_task(TaskCreate(title="Done task"))
-    service.mark_task_done(done_task.id)
-    service.update_task(
-        open_task.id,
-        TaskUpdate(status=TaskStatus.IN_PROGRESS),
-    )
-    service.create_task(TaskCreate(title="Another open"))
+def test_list_open_tasks(client: MagicMock) -> None:
+    client.list_open_tasks.return_value = [SAMPLE_TASK]
 
-    result = list_open_tasks(service)
+    result = list_open_tasks(client)
 
     assert result["count"] == 1
-    assert len(result["tasks"]) == 1
-    assert result["tasks"][0]["title"] == "Another open"
+    assert result["tasks"][0]["title"] == "First"
