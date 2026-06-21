@@ -1,3 +1,3 @@
-"""tasks-mcp-server — core task storage backend."""
+"""tasks-mcp-server — task storage and REST API backend."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

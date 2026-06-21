@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
+from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from tasks_mcp_server.config import get_database_url
@@ -13,8 +14,11 @@ def get_engine(*, database_url: str | None = None):
     global _engine
     url = database_url or get_database_url()
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    engine_kwargs: dict = {"connect_args": connect_args}
+    if url == "sqlite:///:memory:":
+        engine_kwargs["poolclass"] = StaticPool
     if _engine is None or str(_engine.url) != url:
-        _engine = create_engine(url, connect_args=connect_args)
+        _engine = create_engine(url, **engine_kwargs)
     return _engine
 
 
@@ -32,4 +36,9 @@ def create_db_and_tables(*, database_url: str | None = None) -> None:
 def get_session(*, database_url: str | None = None) -> Generator[Session, None, None]:
     engine = get_engine(database_url=database_url)
     with Session(engine) as session:
+        yield session
+
+
+def get_db() -> Generator[Session, None, None]:
+    with get_session() as session:
         yield session

@@ -1,6 +1,7 @@
 from sqlmodel import Session
 
 from tasks_mcp_server import repositories
+from tasks_mcp_server.models import TaskStatus
 from tasks_mcp_server.schemas import TaskCreate, TaskRead, TaskUpdate
 
 
@@ -18,8 +19,8 @@ class TaskService:
             return None
         return TaskRead.model_validate(task)
 
-    def list_tasks(self) -> list[TaskRead]:
-        tasks = repositories.list_tasks(self._session)
+    def list_tasks(self, *, status: TaskStatus | None = None) -> list[TaskRead]:
+        tasks = repositories.list_tasks(self._session, status=status)
         return [TaskRead.model_validate(task) for task in tasks]
 
     def update_task(self, task_id: int, task_update: TaskUpdate) -> TaskRead | None:
