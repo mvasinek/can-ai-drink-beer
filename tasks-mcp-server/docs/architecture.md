@@ -80,6 +80,18 @@ This guarantees that:
 - tasks marked done by Cursor appear in the web UI after refresh,
 - there is only one database access path to troubleshoot.
 
+## Why the MCP Server Uses REST API
+
+Since v0.5.1, MCP tools call the REST API instead of opening SQLite directly. This design choice provides:
+
+- **Single source of truth** — one code path for all task operations
+- **Simpler debugging** — inspect HTTP requests in `/docs` or browser dev tools
+- **Immediate UI updates** — the browser and Cursor always see the same data
+- **Better separation of concerns** — MCP is an adapter, not a second backend
+- **Closer to real-world enterprise architectures** — agents integrate through APIs, not database drivers
+
+Configure the API location with `TASKS_MCP_API_BASE_URL` (default: `http://127.0.0.1:8000`).
+
 ## Why the MCP server is separate from FastAPI
 
 The MCP server and the web application run as separate processes:

@@ -6,6 +6,17 @@ This document describes the intended YouTube demonstration flow.
 
 The demo shows a human creating a task in the browser, then a Cursor agent picking up that task through MCP, doing the work, and marking it complete. The human refreshes the browser to see the result.
 
+**End-to-end data flow:**
+
+1. Web UI creates a task.
+2. REST API stores the task in SQLite.
+3. MCP server retrieves the task through the REST API.
+4. Cursor performs the work.
+5. MCP server marks the task as completed through the REST API.
+6. Web UI immediately shows the updated state after refresh.
+
+The MCP server never reads or writes SQLite directly.
+
 ## Step-by-step
 
 ### 1. Start the web application
@@ -70,7 +81,13 @@ The task is created through the web interface. The Cursor agent retrieves the ta
 
 ### 6. Configure Cursor MCP connection
 
-Copy the example from [`docs/cursor/mcp-config.json`](cursor/mcp-config.json) into your Cursor MCP settings. Set `cwd` to your local `tasks-mcp-server` path.
+Copy the example from [`docs/cursor/mcp-config.json`](cursor/mcp-config.json) into your Cursor MCP settings.
+
+- Set `cwd` to the **repository root** (the `tasks-mcp-server` folder).
+- Set `env.TASKS_MCP_API_BASE_URL` to `http://127.0.0.1:8000`.
+- Ensure Terminal 1 (uvicorn) is still running.
+
+See [`docs/cursor/mcp-config.md`](cursor/mcp-config.md) for field-by-field help.
 
 ### 7. Ask Cursor to retrieve the next task
 

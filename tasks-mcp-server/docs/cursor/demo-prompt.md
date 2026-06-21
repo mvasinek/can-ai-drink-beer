@@ -2,6 +2,8 @@
 
 Use this prompt during the YouTube demonstration.
 
+**Prerequisite:** Start the web app (`uvicorn tasks_mcp_server.app:app --reload`) and configure Cursor MCP with `TASKS_MCP_API_BASE_URL=http://127.0.0.1:8000` before running the prompt.
+
 ## Basic prompt
 
 ```text
@@ -30,8 +32,8 @@ After the work is completed and verified, call mark_task_done with the task id.
 
 | Tool | Purpose |
 |------|---------|
-| `get_next_task` | Get the oldest open task |
-| `mark_task_done` | Mark a task as completed |
+| `get_next_task` | Get the oldest open task (via `GET /api/tasks/next/open`) |
+| `mark_task_done` | Mark a task as completed (via `POST /api/tasks/{id}/done`) |
 | `get_task` | Read full task details by ID |
 | `list_open_tasks` | List all open tasks |
 

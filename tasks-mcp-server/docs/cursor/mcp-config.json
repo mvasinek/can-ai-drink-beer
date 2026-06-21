@@ -3,10 +3,12 @@
     "tasks-mcp-server": {
       "command": "python",
       "args": [
-        "-m",
-        "tasks_mcp_server.mcp_server"
+        "src/tasks_mcp_server/mcp_server.py"
       ],
-      "cwd": "/path/to/tasks-mcp-server"
+      "cwd": "/path/to/tasks-mcp-server",
+      "env": {
+        "TASKS_MCP_API_BASE_URL": "http://127.0.0.1:8000"
+      }
     }
   }
 }

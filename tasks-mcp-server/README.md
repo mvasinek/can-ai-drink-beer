@@ -2,7 +2,7 @@
 
 A localhost demo app for managing tasks through a web UI, REST API, and MCP tools. Built for a YouTube series on Spec-Driven Development, Semantic Versioning, Cursor Agents, and Model Context Protocol (MCP).
 
-**Current version:** 0.5.1
+**Current version:** 0.5.2
 
 ## What this project demonstrates
 
@@ -16,46 +16,30 @@ Tasks can be fetched by Cursor through MCP while humans manage the same task lis
 ## Architecture overview
 
 ```text
-+----------------------+
-| Web Frontend         |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| REST API             |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Service Layer        |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| SQLite Database      |
-+----------------------+
+Browser
+   │
+   ▼
+Web Frontend
+   │
+   ▼
+REST API
+   │
+   ▼
+SQLite
 
-+----------------------+
-| Cursor Agent         |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| MCP Server           |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| REST API             |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| SQLite Database      |
-+----------------------+
+Cursor Agent
+   │
+   ▼
+MCP Server
+   │
+   ▼
+REST API
+   │
+   ▼
+SQLite
 ```
 
-The MCP server is a lightweight adapter. It does not access SQLite directly.
+The MCP server is a lightweight HTTP adapter. It never accesses SQLite directly — all task reads and writes go through the REST API.
 
 More detail: [docs/architecture.md](docs/architecture.md)
 
@@ -83,29 +67,25 @@ set TASKS_MCP_DATABASE_URL=sqlite:///./tasks.db
 set TASKS_MCP_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-## Running the web app
+### Required startup sequence
 
-**Terminal 1** — start the REST API and web UI:
+Both the web application and MCP integration depend on the REST API. Always start in this order:
+
+#### Terminal 1 — web application
 
 ```bash
 uvicorn tasks_mcp_server.app:app --reload
 ```
 
-Open:
+#### Verify
 
-```text
-http://127.0.0.1:8000
-```
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) and confirm the web UI loads.
 
-REST API interactive docs:
+REST API interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-```text
-http://127.0.0.1:8000/docs
-```
+#### Terminal 2 — MCP server (optional manual test)
 
-## Running the MCP server
-
-**Terminal 2** — start the MCP adapter (keep Terminal 1 running):
+Cursor normally starts the MCP server automatically. For manual testing:
 
 ```bash
 python -m tasks_mcp_server.mcp_server
@@ -113,33 +93,70 @@ python -m tasks_mcp_server.mcp_server
 
 The MCP server communicates with the application through the REST API. This guarantees that all task operations are immediately visible in the web UI.
 
-Cursor normally launches this process automatically when MCP is configured.
+## Cursor MCP Configuration
 
-## Cursor MCP configuration
+Cursor starts the MCP server as a local child process. The MCP server then sends HTTP requests to the FastAPI REST API — it does not open the SQLite database.
 
-Copy [docs/cursor/mcp-config.json](docs/cursor/mcp-config.json) into your Cursor MCP settings. Set `cwd` to your local `tasks-mcp-server` directory.
+Copy the example from [docs/cursor/mcp-config.json](docs/cursor/mcp-config.json). Field-by-field help: [docs/cursor/mcp-config.md](docs/cursor/mcp-config.md).
 
-On Windows, prefer the venv Python path:
+### Recommended configuration
+
+Use the direct script path with `cwd` pointing at the repository root:
 
 ```json
 {
   "mcpServers": {
     "tasks-mcp-server": {
-      "command": "C:/path/to/tasks-mcp-server/.venv/Scripts/python.exe",
-      "args": ["-m", "tasks_mcp_server.mcp_server"],
-      "cwd": "C:/path/to/tasks-mcp-server"
+      "command": "python",
+      "args": [
+        "src/tasks_mcp_server/mcp_server.py"
+      ],
+      "cwd": "/path/to/tasks-mcp-server",
+      "env": {
+        "TASKS_MCP_API_BASE_URL": "http://127.0.0.1:8000"
+      }
     }
   }
 }
 ```
 
+- `cwd` points to the repository root (the folder containing `src/` and `pyproject.toml`).
+- `TASKS_MCP_API_BASE_URL` points to the running FastAPI application.
+
+On Windows, set `command` to your venv Python, e.g. `C:/path/to/tasks-mcp-server/.venv/Scripts/python.exe`.
+
+If imports fail, add `"PYTHONPATH": "src"` to `env` or run `pip install -e .` first.
+
+### Advanced configuration
+
+After `pip install -e .`, you can use the module entry point:
+
+```json
+{
+  "mcpServers": {
+    "tasks-mcp-server": {
+      "command": "python",
+      "args": [
+        "-m",
+        "tasks_mcp_server.mcp_server"
+      ],
+      "env": {
+        "TASKS_MCP_API_BASE_URL": "http://127.0.0.1:8000"
+      }
+    }
+  }
+}
+```
+
+This version assumes the package is installed in the Python environment Cursor uses.
+
 ## Demo workflow
 
 Full step-by-step guide: [docs/demo-workflow.md](docs/demo-workflow.md)
 
-1. Start the web app and open the browser UI
+1. Start the web app and verify [http://127.0.0.1:8000](http://127.0.0.1:8000)
 2. Create a task (or load examples — see below)
-3. Configure Cursor MCP
+3. Configure Cursor MCP with `TASKS_MCP_API_BASE_URL`
 4. Ask Cursor to retrieve and complete the next task
 5. Refresh the browser to see the completed task
 
@@ -175,7 +192,7 @@ python scripts/load_sample_tasks.py
 
 Common issues and fixes: [docs/troubleshooting.md](docs/troubleshooting.md)
 
-Topics include port conflicts, REST API unavailable, MCP startup, and Cursor not seeing tools.
+Topics include REST API unavailable, MCP configuration, `cwd` path mistakes, and Cursor not seeing tools.
 
 ## Running tests
 
@@ -224,10 +241,11 @@ Prompt: `implement_next_task` — built-in agent guidance
 | 0.3.0 | Web frontend |
 | 0.4.0 | MCP integration |
 | 0.5.0 | Demo and documentation release |
-| **0.5.1** | MCP routed through REST API |
+| 0.5.1 | MCP routed through REST API |
+| **0.5.2** | MCP configuration documentation |
 | Later | Authentication, deployment |
 
-Release notes: [docs/release-notes-v0.5.1.md](docs/release-notes-v0.5.1.md)
+Release notes: [docs/release-notes-v0.5.2.md](docs/release-notes-v0.5.2.md)
 
 See `specifications/` for version specs.
 

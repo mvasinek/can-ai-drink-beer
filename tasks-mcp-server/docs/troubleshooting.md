@@ -23,6 +23,73 @@ Then open `http://127.0.0.1:8001`.
 
 ---
 
+## MCP server cannot connect to REST API
+
+**Symptoms:**
+
+```text
+Unable to contact Tasks REST API
+Connection refused
+```
+
+**Likely cause:** The FastAPI application is not running.
+
+**Suggested fix:**
+
+```bash
+uvicorn tasks_mcp_server.app:app --reload
+```
+
+Verify [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) returns `{"status":"ok"}`.
+
+Ensure `TASKS_MCP_API_BASE_URL` in Cursor MCP settings matches the running server (default: `http://127.0.0.1:8000`).
+
+---
+
+## MCP tools not visible in Cursor
+
+**Symptoms:** The agent does not call `get_next_task`, `mark_task_done`, or other tools.
+
+**Likely cause:** Incorrect MCP configuration, wrong `cwd`, wrong Python executable, or Cursor needs a reload.
+
+**Check:**
+
+1. MCP configuration path and JSON syntax
+2. `cwd` setting points to the `tasks-mcp-server` repository root
+3. Python executable matches the environment where `pip install -e .` was run
+4. Reload MCP servers or restart Cursor after config changes
+5. Web app is running before using MCP tools
+
+See [`docs/cursor/mcp-config.json`](cursor/mcp-config.json) and [`docs/cursor/mcp-config.md`](cursor/mcp-config.md).
+
+---
+
+## Wrong repository path (`cwd`)
+
+**Symptoms:** MCP server fails to start, import errors, or tools return API errors.
+
+**Likely cause:** The `cwd` setting does not point to the repository root.
+
+**Suggested fix:**
+
+The `cwd` value must be the folder that contains `src/`, `pyproject.toml`, and `examples/`.
+
+Example (Windows):
+
+```text
+C:/Users/you/projects/can-ai-drink-beer/tasks-mcp-server
+```
+
+Example (Linux/macOS):
+
+```text
+/home/you/projects/can-ai-drink-beer/tasks-mcp-server
+```
+
+Do not set `cwd` to the monorepo root unless the project files live there directly.
+
+---
+
 ## MCP server does not start
 
 **Symptoms:** Cursor reports the MCP server failed to start, or `python -m tasks_mcp_server.mcp_server` exits immediately.
@@ -126,4 +193,4 @@ See also:
 
 - [Architecture](architecture.md)
 - [Demo workflow](demo-workflow.md)
-- [Release notes v0.5.0](release-notes-v0.5.0.md)
+- [Release notes v0.5.2](release-notes-v0.5.2.md)
