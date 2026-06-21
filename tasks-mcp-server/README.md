@@ -1,18 +1,19 @@
 # tasks-mcp-server
 
-A Python backend for managing tasks with a web frontend, REST API, and MCP server for AI agents.
+A localhost demo app for managing tasks through a web UI, REST API, and MCP tools. Built for a YouTube series on Spec-Driven Development, Semantic Versioning, Cursor Agents, and Model Context Protocol (MCP).
 
-**Current version:** 0.4.0
+**Current version:** 0.5.0
 
-## Project context
+## What this project demonstrates
 
-This project is a demonstration application for a YouTube video series about Spec-Driven Development, Semantic Versioning, Cursor Agents, and Model Context Protocol (MCP).
+- **Spec-driven development** — each version is defined before implementation
+- **Semantic versioning** — incremental releases from storage to API to frontend to MCP
+- **Human + agent workflow** — create tasks in the browser, let Cursor complete them via MCP
+- **Shared architecture** — one service layer and one SQLite database for humans and agents
 
-The application is intended to run only on **localhost**. Production concerns such as authentication, deployment, and cloud hosting are intentionally out of scope. The goal is simplicity, readability, and ease of setup.
+Tasks can be fetched by Cursor through MCP while humans manage the same task list in the browser.
 
-Version 0.4.0 adds a standalone MCP server so Cursor and other MCP-compatible agents can read and complete tasks through the shared service layer.
-
-## Architecture
+## Architecture overview
 
 ```text
 +----------------------+
@@ -35,6 +36,11 @@ Version 0.4.0 adds a standalone MCP server so Cursor and other MCP-compatible ag
 +----------------------+
 
 +----------------------+
+| Cursor Agent         |
++----------+-----------+
+           |
+           v
++----------------------+
 | MCP Server           |
 +----------+-----------+
            |
@@ -44,7 +50,9 @@ Version 0.4.0 adds a standalone MCP server so Cursor and other MCP-compatible ag
 +----------------------+
 ```
 
-Both the web application and MCP server reuse the same service layer and SQLite database.
+More detail: [docs/architecture.md](docs/architecture.md)
+
+Screenshots may be added later in [docs/images/](docs/images/).
 
 ## Quick start
 
@@ -61,21 +69,25 @@ python -m venv .venv
 pip install -e .
 ```
 
-Optional: override the database location with the `TASKS_MCP_DATABASE_URL` environment variable (default: `sqlite:///tasks.db`).
+Optional: set a fixed database path:
 
-## Running the web application
+```bash
+set TASKS_MCP_DATABASE_URL=sqlite:///./tasks.db
+```
+
+## Running the web app
 
 ```bash
 uvicorn tasks_mcp_server.app:app --reload
 ```
 
-Open the web frontend locally:
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Open the interactive REST API docs locally:
+REST API interactive docs:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -83,74 +95,43 @@ http://127.0.0.1:8000/docs
 
 ## Running the MCP server
 
-Run the MCP server in a separate terminal while the web app is running:
+In a **second terminal** (keep the web app running):
 
 ```bash
 python -m tasks_mcp_server.mcp_server
 ```
 
-The MCP server uses stdio transport and is intended for local tools such as Cursor.
+Cursor normally launches this process automatically when MCP is configured.
 
-### MCP tools
+## Cursor MCP configuration
 
-| Tool | Description |
-|------|-------------|
-| `get_next_task` | Return the oldest open task |
-| `mark_task_done` | Mark a task as done |
-| `get_task` | Return full task details |
-| `list_open_tasks` | List all open tasks |
+Copy [docs/cursor/mcp-config.json](docs/cursor/mcp-config.json) into your Cursor MCP settings. Set `cwd` to your local `tasks-mcp-server` directory.
 
-### MCP resource
-
-| Resource | Description |
-|----------|-------------|
-| `tasks://open` | JSON list of all open tasks |
-
-### MCP prompt
-
-| Prompt | Description |
-|--------|-------------|
-| `implement_next_task` | Guides an agent to fetch, implement, and complete the next task |
-
-## Example Cursor configuration
-
-Add this to your Cursor MCP settings. Set `cwd` to the local path of this project:
-
-```json
-{
-  "mcpServers": {
-    "tasks-mcp-server": {
-      "command": "python",
-      "args": [
-        "-m",
-        "tasks_mcp_server.mcp_server"
-      ],
-      "cwd": "/path/to/tasks-mcp-server"
-    }
-  }
-}
-```
-
-On Windows, use the full path to the project virtual environment Python if needed:
+On Windows, prefer the venv Python path:
 
 ```json
 {
   "mcpServers": {
     "tasks-mcp-server": {
       "command": "C:/path/to/tasks-mcp-server/.venv/Scripts/python.exe",
-      "args": [
-        "-m",
-        "tasks_mcp_server.mcp_server"
-      ],
+      "args": ["-m", "tasks_mcp_server.mcp_server"],
       "cwd": "C:/path/to/tasks-mcp-server"
     }
   }
 }
 ```
 
-## Example Cursor prompt
+## Demo workflow
 
-Use this prompt during the YouTube demonstration:
+Full step-by-step guide: [docs/demo-workflow.md](docs/demo-workflow.md)
+
+1. Start the web app and open the browser UI
+2. Create a task (or load examples — see below)
+3. Configure Cursor MCP
+4. Ask Cursor to retrieve and complete the next task
+5. Refresh the browser to see the completed task
+
+**Demo prompt:**
 
 ```text
 Use the Tasks MCP Server.
@@ -161,6 +142,28 @@ Implement the requested work.
 
 After the work is completed, call mark_task_done.
 ```
+
+More prompts: [docs/cursor/demo-prompt.md](docs/cursor/demo-prompt.md)
+
+## Example tasks
+
+Bundled demo tasks live in [examples/sample_tasks.json](examples/sample_tasks.json):
+
+- Create `hello_mcp.txt`
+- Add `demo_note.md`
+- Update README demo section
+
+Load them into the database:
+
+```bash
+python scripts/load_sample_tasks.py
+```
+
+## Troubleshooting
+
+Common issues and fixes: [docs/troubleshooting.md](docs/troubleshooting.md)
+
+Topics include port conflicts, MCP startup, Cursor not seeing tools, and database path mismatches.
 
 ## Running tests
 
@@ -173,20 +176,6 @@ pytest
 ```bash
 ruff check .
 ```
-
-## Frontend overview
-
-The web UI is a single-page interface served at `/`. It uses vanilla JavaScript and talks to the REST API only.
-
-Supported actions:
-
-- view the task list
-- create a task
-- edit a task (title, description, status)
-- delete a task
-- mark a task as done
-- filter tasks by status
-- refresh the task list
 
 ## REST API overview
 
@@ -201,30 +190,34 @@ Supported actions:
 | DELETE | `/api/tasks/{task_id}` | Delete a task |
 | POST | `/api/tasks/{task_id}/done` | Mark a task as done |
 
-## Example curl commands
+## MCP tools
 
-```bash
-curl http://127.0.0.1:8000/health
-```
+| Tool | Description |
+|------|-------------|
+| `get_next_task` | Return the oldest open task |
+| `mark_task_done` | Mark a task as done |
+| `get_task` | Return full task details |
+| `list_open_tasks` | List all open tasks |
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Example task", "description": "Created through REST API"}'
-```
+Resource: `tasks://open` — JSON list of open tasks
 
-```bash
-curl http://127.0.0.1:8000/api/tasks
-```
+Prompt: `implement_next_task` — built-in agent guidance
 
 ## Roadmap
 
 | Version | Focus |
 |---------|-------|
-| 0.1.0 | Core task storage (SQLite, models, repository, service) |
-| 0.2.0 | REST API endpoints |
+| 0.1.0 | Core task storage |
+| 0.2.0 | REST API |
 | 0.3.0 | Web frontend |
-| **0.4.0** | MCP server integration |
+| 0.4.0 | MCP integration |
+| **0.5.0** | Demo and documentation release |
 | Later | Authentication, deployment |
 
-See `specifications/` for detailed version specs.
+Release notes: [docs/release-notes-v0.5.0.md](docs/release-notes-v0.5.0.md)
+
+See `specifications/` for version specs.
+
+## License note
+
+This project is provided as educational demo material for the YouTube series. Use and adapt it for learning and local experimentation.

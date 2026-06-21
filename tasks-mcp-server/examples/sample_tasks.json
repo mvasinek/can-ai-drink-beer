@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Create hello_mcp.txt",
+    "description": "Create a file named hello_mcp.txt in the project root and write a short greeting from the MCP task server into it."
+  },
+  {
+    "title": "Add demo note",
+    "description": "Create a file named demo_note.md and add a short note explaining that this file was created by Cursor after reading a task from the MCP server."
+  },
+  {
+    "title": "Update README demo section",
+    "description": "Add one short sentence to the README explaining that tasks can be fetched by Cursor through MCP."
+  }
+]

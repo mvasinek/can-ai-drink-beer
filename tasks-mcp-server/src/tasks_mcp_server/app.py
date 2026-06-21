@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="Tasks MCP Server",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 

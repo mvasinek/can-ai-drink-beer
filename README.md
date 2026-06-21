@@ -6,7 +6,7 @@ Monorepository used as source material for YouTube videos. Each top-level folder
 
 ### [tasks-mcp-server](tasks-mcp-server/)
 
-Python backend for task management (SQLite, SQLModel, FastAPI). Currently at **v0.1.0** — core storage layer only.
+Python backend for task management (SQLite, REST API, web UI, MCP). Currently at **v0.5.0** — demo and documentation release.
 
 ### [semantic-versioning](semantic-versioning/)
 

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tasks-mcp-server": {
+      "command": "python",
+      "args": [
+        "-m",
+        "tasks_mcp_server.mcp_server"
+      ],
+      "cwd": "/path/to/tasks-mcp-server"
+    }
+  }
+}
