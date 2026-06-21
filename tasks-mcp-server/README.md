@@ -1,8 +1,8 @@
 # tasks-mcp-server
 
-A Python backend for managing tasks, designed to expose REST API and MCP tools in future versions.
+A Python backend for managing tasks, designed to expose REST API, a web frontend, and MCP tools in future versions.
 
-**Current version:** 0.2.0
+**Current version:** 0.3.0
 
 ## Project context
 
@@ -10,7 +10,7 @@ This project is a demonstration application for a YouTube video series about Spe
 
 The application is intended to run only on **localhost**. Production concerns such as authentication, deployment, and cloud hosting are intentionally out of scope. The goal is simplicity, readability, and ease of setup.
 
-Version 0.2.0 adds a FastAPI REST API on top of the v0.1.0 storage layer. Frontend and MCP tools are planned for later releases.
+Version 0.3.0 adds a simple HTML/CSS/JavaScript frontend on top of the v0.2.0 REST API. MCP integration is planned for a later release.
 
 ## Quick start
 
@@ -27,13 +27,19 @@ python -m venv .venv
 pip install -e .
 ```
 
-Run the API server:
+Run the application:
 
 ```bash
 uvicorn tasks_mcp_server.app:app --reload
 ```
 
-Open the interactive API docs locally:
+Open the web frontend locally:
+
+```text
+http://127.0.0.1:8000
+```
+
+Open the interactive REST API docs locally:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -52,6 +58,22 @@ pytest
 ```bash
 ruff check .
 ```
+
+## Frontend overview
+
+The web UI is a single-page interface served at `/`. It uses vanilla JavaScript and talks to the REST API only.
+
+Supported actions:
+
+- view the task list
+- create a task
+- edit a task (title, description, status)
+- delete a task
+- mark a task as done
+- filter tasks by status
+- refresh the task list
+
+Static assets are served from `/static`.
 
 ## REST API overview
 
@@ -87,8 +109,9 @@ curl http://127.0.0.1:8000/api/tasks
 | Version | Focus |
 |---------|-------|
 | 0.1.0 | Core task storage (SQLite, models, repository, service) |
-| **0.2.0** | REST API endpoints |
-| 0.3.0+ | MCP server tools |
-| Later | Frontend, authentication, deployment |
+| 0.2.0 | REST API endpoints |
+| **0.3.0** | Web frontend |
+| 0.4.0+ | MCP server tools |
+| Later | Authentication, deployment |
 
 See `specifications/` for detailed version specs.

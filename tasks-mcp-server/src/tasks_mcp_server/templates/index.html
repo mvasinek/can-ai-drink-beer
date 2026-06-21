@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks MCP Server</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1>Tasks MCP Server</h1>
+            <p class="subtitle">Simple task manager demo</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="panel">
+            <h2>Create Task</h2>
+            <form id="create-form" class="create-form">
+                <label for="title">Title</label>
+                <input id="title" name="title" type="text" required maxlength="200">
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3"></textarea>
+
+                <button type="submit" class="btn btn-primary">Create Task</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>Filters</h2>
+            <div class="filters-row">
+                <label for="status-filter">Status</label>
+                <select id="status-filter">
+                    <option value="">All</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                <button id="refresh-btn" type="button" class="btn btn-secondary">Refresh</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Task List</h2>
+            <div id="task-list" class="task-list"></div>
+            <p id="empty-state" class="empty-state hidden">No tasks found.</p>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
